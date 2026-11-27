@@ -5,6 +5,7 @@ import numpy as np
 import mediapipe as mp
 from mediapipe.tasks.python import BaseOptions, vision
 from PIL import Image, ImageDraw, ImageFont
+import dashboard
 
 MODEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "face_landmarker.task")
 CAM_SOURCES = [0, 1]  # tries each until one opens; phone camera: "http://<phone-ip>:8080/video"
@@ -164,6 +165,7 @@ def main():
         return
 
     landmarker = create_landmarker()
+    dashboard.start()
     smoothed, label, show_mesh = {}, "Neutral", True
     start = time.time()
     print("Press Q to quit, M to toggle the face mesh.")
@@ -184,6 +186,7 @@ def main():
             raw = emotion_scores(shapes)
             smoothed = {k: SMOOTHING * v + (1 - SMOOTHING) * smoothed.get(k, v) for k, v in raw.items()}
             label = classify(smoothed)
+            dashboard.update(label, max(smoothed.values()))  # Neutral: score = strongest other emotion
             points = [(int(p.x * w), int(p.y * h)) for p in result.face_landmarks[0]]
 
         cv2.imshow("Emotion IoT - Mood Monitor", render(frame, points, label, smoothed, show_mesh))
